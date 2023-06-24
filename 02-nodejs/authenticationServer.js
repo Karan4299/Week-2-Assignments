@@ -28,10 +28,56 @@
 
   Testing the server - run `npm run test-authenticationServer` command in terminal
  */
+const { v4: uuidv4 } = require('uuid');
+const _ = require('lodash');
+var bodyParser = require('body-parser')
+const express = require("express");
+const USERS = require('./helpers/USERBASE');
 
-const express = require("express")
 const PORT = 3000;
 const app = express();
+app.use(bodyParser.json());
+const USERBASE = new USERS()
+
 // write your logic here, DONT WRITE app.listen(3000) when you're running tests, the tests will automatically start the server
+
+function signUp(req, res) {
+  try {
+    const userData = req.body.userData;
+    USERBASE.addUser(userData);
+    res.send("USER Added sucessfully");
+  } catch (err) {
+    if (err.message === "User already exists") {
+      res.status(400).send("User with same username already exists");
+    }
+    res.status(500).send(err.message)
+  }
+}
+
+function getUsers(req, res) {
+  try {
+    const allUserList = USERBASE.getUsers(req);
+    res.send(allUserList);
+  } catch (err) {
+    res.status(500).send(err.message)
+  }
+}
+
+function login(req, res) {
+  try {
+    const loggedInUser = USERBASE.login(req.body.userData);
+    res.send("Welcome " + loggedInUser.firstName)
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+}
+
+app.post('/signup', signUp)
+app.get('/data', getUsers)
+app.post('/login', login)
+
+app.listen(PORT,() => {
+  console.log("Listening on port ",PORT);
+})
 
 module.exports = app;
