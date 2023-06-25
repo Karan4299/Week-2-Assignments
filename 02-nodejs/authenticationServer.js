@@ -29,7 +29,6 @@
   Testing the server - run `npm run test-authenticationServer` command in terminal
  */
 const { v4: uuidv4 } = require('uuid');
-const _ = require('lodash');
 var bodyParser = require('body-parser')
 const express = require("express");
 const USERS = require('./helpers/USERBASE');

@@ -41,9 +41,126 @@
  */
 const express = require('express');
 const bodyParser = require('body-parser');
-
+const _ = require('lodash');
 const app = express();
+const fs = require('fs');
+const PORT = 3000;
 
 app.use(bodyParser.json());
+
+
+app.get('/todos/:id', (req, res) => {
+  fs.readFile('./todo.json', (err, data) => {
+    if (err) throw err;
+    const fileID = req.params.id;
+    const todo = _.find(JSON.parse(data), (obj) => obj.id == fileID)
+
+    res.send(todo);
+  })
+})
+
+app.post('/todos', (req, res) => {
+  const {title, description} = req.body;
+  const newTodo = {
+    id: Math.floor(Math.random() * 1000000), // unique random id
+    title: title,
+    description: description,
+    completed: false
+  }
+  fs.readFile('./todo.json', (err, data) => {
+    if (err) throw err;
+
+    const newList = [
+      ...JSON.parse(data),
+      newTodo
+    ]
+
+    fs.writeFile('./todo.json', JSON.stringify(newList), (err) => {
+      if (err) {
+        console.error('Error creating file:', err);
+        res.status(500).send('Error creating file');
+      } else {
+        res.send('File created successfully');
+      }
+    })
+  })
+})
+
+app.put('/todos/:id', (req, res) => {
+  const {title, completed} = req.body;
+  fs.readFile('./todo.json', (err, data) => {
+    if (err) throw err;
+    const fileID = req.params.id;
+    const fileList = JSON.parse(data);
+    const todoIndex = _.findIndex(fileList, (obj) => {
+      return obj.id == fileID
+    })
+    console.log(todoIndex);
+    if (todoIndex === undefined) res.status(404).send("Task not found");
+
+    const newTodo = {
+      ...fileList[todoIndex],
+      completed: completed
+    }
+
+    const newList = [
+      ...fileList.slice(0, todoIndex),
+      newTodo,
+      ...fileList.slice(todoIndex + 1)
+    ]
+
+    fs.writeFile('./todo.json', JSON.stringify(newList), (err) => {
+      if (err) {
+        console.error('Error creating file:', err);
+        res.status(500).send('Error creating file');
+      } else {
+        res.send('File updated successfully');
+      }
+    })
+  })
+})
+
+app.delete('/todos/:id', (req, res) => {
+  fs.readFile('./todo.json', (err, data) => {
+    if (err) throw err;
+    const fileID = req.params.id;
+    const fileList = JSON.parse(data);
+    const todoIndex = _.findIndex(fileList, (obj) => {
+      return obj.id == fileID
+    })
+    if (todoIndex === undefined) res.status(404).send("Task not found");
+
+
+    const newList = [
+      ...fileList.slice(0, todoIndex),
+      ...fileList.slice(todoIndex + 1)
+    ]
+
+    fs.writeFile('./todo.json', JSON.stringify(newList), (err) => {
+      if (err) {
+        console.error('Error creating file:', err);
+        res.status(500).send('Error creating file');
+      } else {
+        res.send('File deleted successfully');
+      }
+    })
+  })
+})
+
+app.all('*', (req, res) => {
+  res.status(404).send('Route not found');
+})
+
+app.listen(PORT, (req, res) => {
+  // fs.writeFile('./todo.json', JSON.stringify([]), (err) => {
+  //   if (err) {
+  //     console.error('Error creating file:', err);
+  //     res.status(500).send('Error creating blank array');
+  //   } else {
+      console.log("Listening on port ",PORT);
+      // res.send('File created successfully');
+  //   }
+  // })
+})
 
 module.exports = app;
